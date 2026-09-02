@@ -113,7 +113,6 @@ jobs:
               ;;
           esac
 
-
       # =====================================================
       # 清理磁盘
       # =====================================================
@@ -128,7 +127,6 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: true
-
 
       # =====================================================
       # 安装编译依赖
@@ -166,7 +164,6 @@ jobs:
             libelf-dev \
             device-tree-compiler
 
-
       # =====================================================
       # Clone LEDE
       # =====================================================
@@ -190,7 +187,6 @@ jobs:
 
           test -f Makefile
 
-
       # =====================================================
       # 添加 Feeds
       # =====================================================
@@ -210,7 +206,6 @@ jobs:
 
           cat feeds.conf.default
 
-
       # =====================================================
       # 更新 Feeds
       # =====================================================
@@ -225,7 +220,6 @@ jobs:
           ./scripts/feeds update -a
 
           ./scripts/feeds install -a
-
 
       # =====================================================
       # 安装 Passwall
@@ -247,7 +241,6 @@ jobs:
 
           ./scripts/feeds install -a -p passwall_luci
 
-
       # =====================================================
       # Lucky
       # =====================================================
@@ -263,7 +256,6 @@ jobs:
             --depth=1 \
             https://github.com/gdy666/luci-app-lucky.git \
             package/lucky
-
 
       # =====================================================
       # OpenClash
@@ -290,7 +282,6 @@ jobs:
 
           rm -rf /tmp/OpenClash
 
-
       # =====================================================
       # Argon
       # =====================================================
@@ -313,7 +304,6 @@ jobs:
             https://github.com/jerrykuku/luci-app-argon-config.git \
             package/luci-app-argon-config
 
-
       # =====================================================
       # 验证 Nokia Profile
       # =====================================================
@@ -332,7 +322,6 @@ jobs:
             echo "${TARGET_PROFILE}"
             exit 1
           fi
-
 
       # =====================================================
       # 使用仓库根目录 .config
@@ -392,7 +381,6 @@ jobs:
           echo "Package configuration loaded from repository .config"
           echo "========================================"
 
-
       # =====================================================
       # 添加机型 Target 配置
       # =====================================================
@@ -407,7 +395,6 @@ jobs:
 
             mf-ubi)
               cat >> .config <<'EOF'
-
           CONFIG_TARGET_airoha=y
           CONFIG_TARGET_airoha_an7583=y
           CONFIG_TARGET_airoha_an7583_DEVICE_nokia_xg-040g-mf-ubi=y
@@ -416,7 +403,6 @@ jobs:
 
             mf)
               cat >> .config <<'EOF'
-
           CONFIG_TARGET_airoha=y
           CONFIG_TARGET_airoha_an7583=y
           CONFIG_TARGET_airoha_an7583_DEVICE_nokia_xg-040g-mf=y
@@ -425,7 +411,6 @@ jobs:
 
             md)
               cat >> .config <<'EOF'
-
           CONFIG_TARGET_airoha=y
           CONFIG_TARGET_airoha_an7581=y
           CONFIG_TARGET_airoha_an7581_DEVICE_nokia_xg-040g-md=y
@@ -434,7 +419,6 @@ jobs:
 
             md-ubi)
               cat >> .config <<'EOF'
-
           CONFIG_TARGET_airoha=y
           CONFIG_TARGET_airoha_an7581=y
           CONFIG_TARGET_airoha_an7581_DEVICE_nokia_xg-040g-md-ubi=y
@@ -446,7 +430,6 @@ jobs:
               exit 1
               ;;
           esac
-
 
       # =====================================================
       # 默认网络配置
@@ -500,7 +483,6 @@ jobs:
 
           chmod +x files/etc/uci-defaults/99-xg040g-defaults
 
-
       # =====================================================
       # 设置 Argon 默认主题
       # =====================================================
@@ -525,7 +507,6 @@ jobs:
           EOF
 
           chmod +x files/etc/uci-defaults/98-argon-default-theme
-
 
       # =====================================================
       # 默认 root 密码
@@ -590,7 +571,6 @@ jobs:
             exit 1
           fi
 
-
       # =====================================================
       # Make Defconfig
       # =====================================================
@@ -601,7 +581,6 @@ jobs:
           set -e
 
           make defconfig
-
 
       # =====================================================
       # 验证最终配置
@@ -641,7 +620,6 @@ jobs:
 
           echo "All required Chinese packages are enabled."
 
-
       # =====================================================
       # 下载源码
       # =====================================================
@@ -652,7 +630,6 @@ jobs:
           set -e
 
           make download -j$(nproc) V=s
-
 
       # =====================================================
       # 编译
@@ -665,7 +642,6 @@ jobs:
           set -e
 
           make -j$(nproc) V=s BUILD_LOG=1
-
 
       # =====================================================
       # 单线程重试
@@ -681,7 +657,6 @@ jobs:
           echo "Retrying with single thread..."
 
           make -j1 V=s
-
 
       # =====================================================
       # 查找固件
@@ -701,7 +676,6 @@ jobs:
           echo "========================================"
 
           find "${TARGET_DIR}" -type f | sort
-
 
       # =====================================================
       # 准备 Release 文件
@@ -779,7 +753,6 @@ jobs:
           rm -f sha256sums.txt
           ls -lh
 
-
       # =====================================================
       # Build Info
       # =====================================================
@@ -829,7 +802,6 @@ jobs:
             echo "Password: password"
           } > "${RELEASE_DIR}/BUILD_INFO.txt"
 
-
       # =====================================================
       # 发布 GitHub Release
       # =====================================================
@@ -862,7 +834,6 @@ jobs:
             --notes-file "${RELEASE_DIR}/BUILD_INFO.txt" \
             --target "${BUILD_COMMIT}"
 
-
       # =====================================================
       # 上传固件
       # =====================================================
@@ -874,7 +845,6 @@ jobs:
           path: release/${{ env.DEVICE_ID }}/
           retention-days: 30
 
-
       # =====================================================
       # 上传完整 Target
       # =====================================================
@@ -885,7 +855,6 @@ jobs:
           name: Nokia-XG-040G-${{ env.DEVICE_NAME }}-Full-Target
           path: openwrt/bin/targets/airoha/${{ env.TARGET_SUBTARGET }}/
           retention-days: 7
-
 
       # =====================================================
       # 上传编译日志
