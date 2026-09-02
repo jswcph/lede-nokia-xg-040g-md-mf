@@ -1,0 +1,152 @@
+name: Build 4Nokia XG-040G MF/MD
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: "选择要编译的 Nokia XG-040G 型号"
+        required: true
+        type: choice
+        default: mf-ubi
+        options:
+          - mf-ubi
+          - mf
+          - md
+          - md-ubi
+
+  schedule:
+    - cron: "0 19 * * 6"
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    name: ${{ github.event.inputs.device || 'mf-ubi' }} - LEDE
+    runs-on: ubuntu-24.04
+
+    steps:
+      # =====================================================
+      # 1. Checkout 源码仓库
+      # =====================================================
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # =====================================================
+      # 2. 执行 diy-part1.sh (通常用于拉取前添加外部 feeds 源等)
+      # =====================================================
+      - name: Run diy-part1.sh
+        run: |
+          set -e
+          DIY_PART1="${GITHUB_WORKSPACE}/diy-part1.sh"
+          if [ -f "${DIY_PART1}" ]; then
+            echo "Running diy-part1.sh..."
+            chmod +x "${DIY_PART1}"
+            "${DIY_PART1}"
+          else
+            echo "diy-part1.sh not found, skipping."
+          fi
+
+      # =====================================================
+      # 3. 清理服务器磁盘空间
+      # =====================================================
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      # =====================================================
+      # 4. 安装系统编译依赖
+      # =====================================================
+      - name: Install Build Dependencies
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential clang flex bison g++ gawk gettext git \
+            libncurses-dev libssl-dev python3 python3-setuptools rsync \
+            unzip zlib1g-dev file wget curl jq xsltproc swig time \
+            libelf-dev device-tree-compiler
+
+      # =====================================================
+      # 5. 克隆 LEDE 官方源码
+      # =====================================================
+      - name: Clone LEDE Source
+        run: |
+          set -e
+          rm -rf openwrt
+          git clone --depth=1 --branch master https://github.com/coolsnowwolf/lede.git openwrt
+          echo "LEDE commit:"
+          cd openwrt && git log -1 --oneline
+
+      # =====================================================
+      # 6. 执行 diy-part2.sh (最关键：用于修改 Makefile、注入机型、调整配置)
+      # =====================================================
+      - name: Run diy-part2.sh
+        working-directory: openwrt
+        run: |
+          set -e
+          DIY_PART2="${GITHUB_WORKSPACE}/diy-part2.sh"
+          if [ -f "${DIY_PART2}" ]; then
+            echo "Running diy-part2.sh inside openwrt directory..."
+            chmod +x "${DIY_PART2}"
+            "${DIY_PART2}"
+          else
+            echo "diy-part2.sh not found, skipping."
+          fi
+
+      # =====================================================
+      # 7. 更新与安装 Feeds
+      # =====================================================
+      - name: Update and Install Feeds
+        working-directory: openwrt
+        run: |
+          set -e
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      # =====================================================
+      # 8. 加载自定义 .config 配置文件
+      # =====================================================
+      - name: Load Custom Config
+        working-directory: openwrt
+        run: |
+          set -e
+          CONFIG_FILE="${GITHUB_WORKSPACE}/.config"
+          if [ -f "${CONFIG_FILE}" ]; then
+            cp -f "${CONFIG_FILE}" .config
+          else
+            echo "ERROR: Root .config file not found!"
+            exit 1
+          fi
+
+      # =====================================================
+      # 9. 生成默认配置并编译
+      # =====================================================
+      - name: Compile Firmware
+        id: compile
+        working-directory: openwrt
+        run: |
+          set -e
+          make defconfig
+          make download -j$(nproc)
+          make -j$(nproc) V=s || make -j1 V=s
+
+      # =====================================================
+      # 10. 上传固件 Artifacts
+      # =====================================================
+      - name: Upload Firmware Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nokia-XG-040G-LEDE-Firmware
+          path: openwrt/bin/targets/airoha/*/*
+          retention-days: 30
