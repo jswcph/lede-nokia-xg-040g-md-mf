@@ -11,17 +11,9 @@
 #
 
 # Modify default IP
-#sed -i 's/192.168.1.1/192.168.50.5/g' package/base-files/files/bin/config_generate
-
-# Modify default theme
-#sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
-
-# Modify hostname
-#sed -i 's/OpenWrt/P3TERX-Router/g' package/base-files/files/bin/config_generate
 sed -i 's/192.168.1.1/192.168.6.1/g' package/base-files/files/bin/config_generate
 
-
-# 如果 an7581.mk 中没有 nokia_xg-040g-md-ubi，则自动追加定义
+# 自动在 an7581.mk 中追加 nokia_xg-040g-md-ubi 定义
 cat >> target/linux/airoha/image/an7581.mk << 'EOF'
 
 define Device/nokia_xg-040g-md-ubi
