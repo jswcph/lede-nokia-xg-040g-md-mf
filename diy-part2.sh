@@ -1,30 +1,14 @@
 #!/bin/bash
-#
-# https://github.com/P3TERX/Actions-OpenWrt
-# File name: diy-part2.sh
-# Description: OpenWrt DIY script part 2 (After Update feeds)
-#
-# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
-
-# Modify default IP
-sed -i 's/192.168.1.1/192.168.6.1/g' package/base-files/files/bin/config_generate
-
-#!/bin/bash
 #================================================================
 # diy-part2.sh
 #================================================================
 
-# 1. 检查 an7581.mk 文件是否存在
+# 1. 向 an7581.mk 注入 md-ubi 机型定义
 MAKEFILE_PATH="target/linux/airoha/image/an7581.mk"
 
 if [ -f "$MAKEFILE_PATH" ]; then
-    echo "Adding nokia_xg-040g-md-ubi definition to $MAKEFILE_PATH ..."
+    echo "Injecting nokia_xg-040g-md-ubi definition into $MAKEFILE_PATH ..."
     
-    # 使用追加符号将设备定义写入 Makefile 末尾
     cat >> "$MAKEFILE_PATH" << 'EOF'
 
 define Device/nokia_xg-040g-md-ubi
@@ -39,9 +23,31 @@ define Device/nokia_xg-040g-md-ubi
 endef
 TARGET_DEVICES += nokia_xg-040g-md-ubi
 EOF
-
-    echo "Successfully added nokia_xg-040g-md-ubi definition."
+    echo "Successfully injected md-ubi definition."
 else
     echo "ERROR: $MAKEFILE_PATH not found!"
     exit 1
+fi
+
+# 2. 提前拉取并集成 Lucky 到 package 目录
+if [ ! -d "package/lucky" ]; then
+    echo "Cloning luci-app-lucky..."
+    git clone --depth=1 https://github.com/gdy666/luci-app-lucky.git package/lucky
+fi
+
+# 3. 提前拉取并集成 OpenClash 到 package 目录
+if [ ! -d "package/luci-app-openclash" ]; then
+    echo "Cloning OpenClash..."
+    git clone --depth=1 https://github.com/vernesong/OpenClash.git /tmp/OpenClash
+    if [ -d "/tmp/OpenClash/luci-app-openclash" ]; then
+        cp -rf /tmp/OpenClash/luci-app-openclash package/luci-app-openclash
+    fi
+    rm -rf /tmp/OpenClash
+fi
+
+# 4. 提前拉取并集成 Argon 主题
+if [ ! -d "package/luci-theme-argon" ]; then
+    echo "Cloning Argon theme..."
+    git clone --depth=1 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
+    git clone --depth=1 https://github.com/jerrykuku/luci-app-argon-config.git package/luci-app-argon-config
 fi
